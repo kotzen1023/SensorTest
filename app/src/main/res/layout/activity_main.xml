@@ -16,12 +16,28 @@
         android:stackFromBottom="true"
         android:layout_weight="1"/>
 
-    <Button
-        android:text="Button"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/btnStopOrPlay"
-        android:layout_weight="9"/>
+        android:layout_weight="9"
+        android:orientation="horizontal">
+
+        <Button
+            android:text="Button"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/btnStopOrPlay"
+            android:layout_weight="1"/>
+
+        <Button
+            android:text="reset"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:id="@+id/btnReset"/>
+    </LinearLayout>
+
+
 
 
 </LinearLayout>

@@ -38,11 +38,18 @@ public class MainActivity extends AppCompatActivity {
 
     private static long previous_time = 0;
     private static long current_time = 0;
+    private static double x_previous_velocity = 0.0;
+    private static double y_previous_velocity = 0.0;
+    private static double x_current_velocity = 0.0;
+    private static double y_current_velocity = 0.0;
     private static double previous_accel = 0.0;
     private static double current_accel = 0.0;
 
-    private static double x_coordinate = 0.0;
-    private static double y_coordinate = 0.0;
+    private static long x_coordinate_current = 0;
+    private static long y_coordinate_current = 0;
+    private static long x_coordinate_previous = 0;
+    private static long y_coordinate_previous = 0;
+    private static double distance = 0;
 
     private ListView listView;
     private SimpleAdapter simpleAdapter;
@@ -58,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
 
         listView = (ListView) findViewById(R.id.listView);
         Button btnStop = (Button) findViewById(R.id.btnStopOrPlay);
+        Button btnReset = (Button) findViewById(R.id.btnReset);
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
@@ -97,11 +105,24 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
+        previous_time = 0;
+        current_time = 0;
+        x_previous_velocity = 0.0;
+        y_previous_velocity = 0.0;
+        x_current_velocity = 0.0;
+        y_current_velocity = 0.0;
+        previous_accel = 0.0;
+        current_accel = 0.0;
+
+        x_coordinate_current = 0;
+        y_coordinate_current = 0;
+
+        distance = 0.0;
 
         accelerometerListener = new SensorEventListener() {
             @Override
             public void onSensorChanged(SensorEvent event) {
-
+                double time;
                 if (myList.size() >= 200) {
                     myList.remove(0);
                 }
@@ -113,47 +134,82 @@ public class MainActivity extends AppCompatActivity {
                 //Log.d(TAG, "X: " + String.valueOf(event.values[0]));
                 //Log.d(TAG, "Y: " + String.valueOf(event.values[1]));
                 //Log.d(TAG, "Z: " + String.valueOf(event.values[2]));
-                double time = (((double)(current_time-previous_time))/1000);
+                if (previous_time != 0) {
+                    time = (((double) (current_time - previous_time)) / 1000);
 
-                //x_coordinate = x_coordinate + (event.values[0] * time * time)*100;
-                //y_coordinate = x_coordinate + (event.values[1] * time * time)*100;
-                //z_coordinate = z_coordinate + (event.values[2] * time * time)*100;
-
-
-
-                //double velocity = Accel2mms(current_accel, time);
-                //double distance = velocity * time / 1000.0;
-                x_coordinate = event.values[0] * time * time * 100;
-                y_coordinate = event.values[1] * time * time * 100;
-
-                double aX = event.values[0];
-
-                double velocity = current_accel * time;
-                double distance = velocity * time ;
+                    //x_coordinate = x_coordinate + (event.values[0] * time * time)*100;
+                    //y_coordinate = x_coordinate + (event.values[1] * time * time)*100;
+                    //z_coordinate = z_coordinate + (event.values[2] * time * time)*100;
 
 
+                    //Log.d(TAG, "time = " + time);
 
-                double accel_diff;
-                if (current_accel > previous_accel)
-                    accel_diff = current_accel - previous_accel;
-                else
-                    accel_diff = previous_accel - current_accel;
 
-                //if (accel_diff > 0.2)
-                    Log.d(TAG, "(x, y) = ("+(int)x_coordinate+", "+(int)y_coordinate+") aX="+String.format("%.4f", event.values[0]*100)+" aY="+String.format("%.4f", event.values[1]*100)+
-                            " v="+String.format("%.6f", velocity)+" sec = "+time+" d = "+String.format("%.6f", distance *100));
+                    //double velocity = Accel2mms(current_accel, time);
+                    //double distance = velocity * time / 1000.0;
+                    //x_current_velocity = x_previous_velocity + event.values[0] * time * 100;
+                    //y_current_velocity = y_previous_velocity + event.values[1] * time * 100;
+                    //double x_velocity = event.values[0] * time * 100;
+                    //double y_velocity = event.values[1] * time * 100;
+                    x_coordinate_current = (long)(event.values[0] * time * time * 100);
+                    y_coordinate_current = (long)(event.values[1] * time * time * 100);
+                    x_current_velocity =  (x_coordinate_current - x_coordinate_previous)/time ;
+                    y_current_velocity =  (y_coordinate_current - y_coordinate_previous)/time;
 
-                if (!is_stop) {
+                    Log.d(TAG, "Vx = "+x_previous_velocity+" Vy="+y_current_velocity);
 
-                    Map<String, String> item = new HashMap<String, String>();
+                    double velocity = current_accel * time;
+                    if (x_coordinate_current != 0 && y_coordinate_current != 0) {
+                        //distance = distance + velocity * time;
+                        distance = distance + sqrt(x_current_velocity*x_current_velocity+y_current_velocity*y_current_velocity) * time;
+                        Log.d(TAG, "distance = "+distance);
+                    }
 
-                    logMsg = "(x, y) = ("+(int)x_coordinate+", "+(int)y_coordinate+") aX="+String.format("%.4f", event.values[0]*100)+" aY="+String.format("%.4f", event.values[1]*100)+
-                            " v="+String.format("%.6f", velocity)+" sec = "+time+" d = "+String.format("%.6f", distance *100);
 
-                    item.put("idx", String.valueOf(myList.size() + 1));
-                    item.put("log", logMsg);
 
-                    myList.add(item);
+                    if (!is_stop) {
+
+                        //if (accel_diff > 0.2)
+                        Log.d(TAG, "(" + x_coordinate_current + ", " + y_coordinate_current +
+                                ")" +
+                                " vX=" +
+                                String.format("%.3f", x_current_velocity) +
+                                " vY=" +
+                                String.format("%.3f", y_current_velocity) +
+                                " aX=" +
+                                String.format("%.3f", event.values[0] * 100) +
+                                " aY=" +
+                                String.format("%.3f", event.values[1] * 100) +
+                                " sec = " +
+                                time +
+                                " d = " +
+                                distance );
+
+
+                        Map<String, String> item = new HashMap<String, String>();
+
+                        logMsg = "(" +  x_coordinate_current + ", " +  y_coordinate_current +
+                                ")" +
+                                " vX=" +
+                                String.format("%.3f", x_current_velocity) +
+                                " vY=" +
+                                String.format("%.3f", y_current_velocity) +
+                                " aX=" +
+                                String.format("%.3f", event.values[0] * 100) +
+                                " aY=" +
+                                String.format("%.3f", event.values[1] * 100) +
+                                " sec = " +
+                                time +
+                                " d = " +
+                                distance ;
+
+                        item.put("idx", String.valueOf(myList.size() + 1));
+                        item.put("log", logMsg);
+
+                        myList.add(item);
+
+
+                    }
 
 
                 }
@@ -162,6 +218,10 @@ public class MainActivity extends AppCompatActivity {
 
                 previous_time = current_time;
                 previous_accel = current_accel;
+                //x_previous_velocity = x_current_velocity;
+                //y_previous_velocity = y_current_velocity;
+                x_coordinate_previous = x_coordinate_current;
+                y_coordinate_previous = y_coordinate_current;
             }
 
             @Override
@@ -183,6 +243,17 @@ public class MainActivity extends AppCompatActivity {
                     is_stop = false;
                 else
                     is_stop = true;
+            }
+        });
+
+        btnReset.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                x_current_velocity = 0.0;
+                y_current_velocity = 0.0;
+                x_previous_velocity = 0.0;
+                y_previous_velocity = 0.0;
+                distance = 0.0;
             }
         });
     }
